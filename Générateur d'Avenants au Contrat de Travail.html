@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur d'Avenants au Contrat de Travail (PDF A4)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .document-font {
+            font-family: 'Merriweather', Georgia, serif;
+        }
+        /* Format A4 strict pour aperçu et impression */
+        .a4-sheet {
+            width: 210mm;
+            min-height: 297mm;
+            background: #ffffff;
+            box-shadow: 0 12px 30px -8px rgba(15, 23, 42, 0.16), 0 4px 12px -4px rgba(15, 23, 42, 0.08);
+            margin: 0 auto;
+            padding: 18mm 20mm;
+            box-sizing: border-box;
+            color: #0f172a;
+            line-height: 1.58;
+            font-size: 10.2pt;
+        }
+        .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        @media screen and (max-width: 1023px) {
+            .a4-scroll-wrap {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 2.5rem;
+            }
+            .a4-sheet {
+                width: 210mm;
+            }
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-slate-900">
+
+    <!-- Barre supérieure -->
+    <header class="bg-slate-900 text-white px-4 py-3 flex flex-wrap items-center justify-between gap-2 shadow-md z-20 shrink-0">
+        <div class="flex items-center gap-2.5">
+            <div class="bg-indigo-600 p-2 rounded-lg shrink-0">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-sm sm:text-base leading-tight">Générateur d'Avenants au Contrat de Travail</h1>
+                <p class="text-[11px] text-slate-400">Renouvellement CDD &bull; Rémunération &bull; Passage CDD en CDI &bull; Export PDF A4</p>
+            </div>
+        </div>
+
+        <!-- Bascule mobile Formulaire / Aperçu PDF -->
+        <div class="flex lg:hidden bg-slate-800 p-1 rounded-lg text-xs font-medium">
+            <button type="button" id="btnTabForm" onclick="switchMobileTab('form')" class="px-3 py-1.5 rounded-md bg-indigo-600 text-white transition">
+                Formulaire
+            </button>
+            <button type="button" id="btnTabPreview" onclick="switchMobileTab('preview')" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition">
+                Aperçu PDF
+            </button>
+        </div>
+
+        <!-- Actions globales -->
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="fillSampleData()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-100 text-xs sm:text-sm font-medium rounded-lg transition flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span>Exemple</span>
+            </button>
+            <button type="button" onclick="resetAllFields()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-medium rounded-lg border border-slate-700 transition">
+                Réinitialiser
+            </button>
+            <button type="button" id="btnExportPdf" onclick="exportAmendmentPDF()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold rounded-lg shadow transition flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                <span>Télécharger PDF</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Zone principale : Formulaire à gauche, Aperçu A4 à droite -->
+    <main class="flex-1 flex overflow-hidden">
+
+        <!-- Panneau de saisie -->
+        <section id="formSection" class="w-full lg:w-[470px] xl:w-[510px] bg-white border-r border-slate-200 overflow-y-auto p-5 space-y-6 shrink-0">
+
+            <!-- Message d'information ou d'erreur non bloquant -->
+            <div id="statusBanner" class="hidden p-3 rounded-lg text-xs font-medium border"></div>
+
+            <!-- 1. Choix du type d'avenant -->
+            <div class="space-y-3">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-2 border-b border-slate-100 pb-2">
+                    <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs">1</span>
+                    Type d'Avenant
+                </h2>
+                <div class="grid grid-cols-1 gap-2">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="amendmentType" value="RENEWAL_CDD" checked onchange="handleAmendmentTypeChange()" class="peer sr-only">
+                        <div class="p-3 rounded-lg border-2 border-slate-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50/70 transition flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-bold text-slate-800">Renouvellement d'un CDD</div>
+                                <div class="text-xs text-slate-500">Prolongation de la durée du contrat à durée déterminée</div>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">CDD</span>
+                        </div>
+                    </label>
+
+                    <label class="cursor-pointer">
+                        <input type="radio" name="amendmentType" value="SALARY_CHANGE" onchange="handleAmendmentTypeChange()" class="peer sr-only">
+                        <div class="p-3 rounded-lg border-2 border-slate-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50/70 transition flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-bold text-slate-800">Rémunération / Augmentation de salaire</div>
+                                <div class="text-xs text-slate-500">Modification du salaire mensuel brut, heures et équivalent annuel</div>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Salaire</span>
+                        </div>
+                    </label>
+
+                    <label class="cursor-pointer">
+                        <input type="radio" name="amendmentType" value="CDD_TO_CDI" onchange="handleAmendmentTypeChange()" class="peer sr-only">
+                        <div class="p-3 rounded-lg border-2 border-slate-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50/70 transition flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-bold text-slate-800">Transformation CDD en CDI</div>
+                                <div class="text-xs text-slate-500">Poursuite de la relation contractuelle à durée indéterminée</div>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800">CDI</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 2. L'Employeur (saisie manuelle uniquement) -->
+            <div class="space-y-3">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-2 border-b border-slate-100 pb-2">
+                    <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs">2</span>
+                    L'Employeur (Société)
+                </h2>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nom / Dénomination de la société</label>
+                        <input type="text" id="empCompanyName" placeholder="Ex: TRANSPORTS VALENCE SAS" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Forme juridique</label>
+                        <input type="text" id="empLegalForm" placeholder="Ex: SAS, SARL, EURL" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <!-- Champs spécifiques Rémunération & CDD->CDI (Capital & Code NAF) -->
+                    <div id="empCapitalField">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Capital social (€)</label>
+                        <input type="text" id="empCapital" placeholder="Ex: 50 000" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div id="empNafField" class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Code NAF / APE</label>
+                        <input type="text" id="empNaf" placeholder="Ex: 49.41B" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Adresse du siège social</label>
+                        <input type="text" id="empAddress" placeholder="Ex: 15 Rue de l'Industrie" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div id="empPostalCityField" class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Code postal et ville du siège</label>
+                        <input type="text" id="empPostalCity" placeholder="Ex: 26000 Valence" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <!-- Champs RCS spécifiques Renouvellement CDD -->
+                    <div id="empRcsCityField">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Ville d'enregistrement RCS</label>
+                        <input type="text" id="empRcsCity" placeholder="Ex: Romans-sur-Isère" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div id="empRcsNumField">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Numéro d'enregistrement RCS</label>
+                        <input type="text" id="empRcsNumber" placeholder="Ex: 812 345 678" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Représentant de la société</label>
+                        <input type="text" id="empRepName" placeholder="Ex: Dupont Jean" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Qualité du représentant</label>
+                        <input type="text" id="empRepRole" placeholder="Ex: Président / Gérant" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Le Salarié -->
+            <div class="space-y-3">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-2 border-b border-slate-100 pb-2">
+                    <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs">3</span>
+                    Le Salarié
+                </h2>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Civilité</label>
+                        <select id="salCivility" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white">
+                            <option value="Monsieur">Monsieur</option>
+                            <option value="Madame">Madame</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Prénom</label>
+                        <input type="text" id="salFirstName" placeholder="Ex: Lucas" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nom</label>
+                        <input type="text" id="salLastName" placeholder="Ex: MARTIN" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Date de naissance</label>
+                        <input type="date" id="salBirthDate" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Lieu de naissance</label>
+                        <input type="text" id="salBirthPlace" placeholder="Ex: Valence (26)" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div class="sm:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Adresse du salarié</label>
+                        <input type="text" id="salAddress" placeholder="Ex: 8 Rue des Lilas" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div id="salPostalCityField" class="sm:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Code postal et ville du salarié</label>
+                        <input type="text" id="salPostalCity" placeholder="Ex: 26500 Bourg-lès-Valence" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div id="salNationalityField" class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nationalité</label>
+                        <input type="text" id="salNationality" placeholder="Ex: Française" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div id="salSsnField" class="sm:col-span-1">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">N° Sécurité Sociale</label>
+                        <input type="text" id="salSsn" placeholder="1 92 05 26..." oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Détails spécifiques à l'avenant choisi -->
+            <div class="space-y-3">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-2 border-b border-slate-100 pb-2">
+                    <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs">4</span>
+                    Modalités de l'Avenant
+                </h2>
+
+                <!-- Bloc A : Renouvellement d'un CDD -->
+                <div id="blockRenewalCdd" class="space-y-3 bg-indigo-50/50 p-3.5 rounded-lg border border-indigo-200">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Durée du renouvellement</label>
+                            <input type="text" id="renDuration" placeholder="Ex: 6 mois" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Début du renouvellement</label>
+                            <input type="date" id="renStartDate" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Date de fin de renouvellement</label>
+                            <input type="date" id="renEndDate" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Mention sur le rang du renouvellement (Article 2)</label>
+                            <select id="renRankNote" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500">
+                                <option value="first_of_two">Ce renouvellement étant le premier renouvellement du contrat à durée déterminée, un second et dernier renouvellement pourra être proposé au salarié, conformément aux dispositions de l'Article L. 1243-13 du Code du Travail.</option>
+                                <option value="second_final">Ce renouvellement constitue le second et dernier renouvellement autorisé conformément aux dispositions de l'Article L. 1243-13 du Code du Travail.</option>
+                                <option value="custom">Mention personnalisée (saisie ci-dessous)</option>
+                            </select>
+                        </div>
+                        <div id="renCustomNoteWrap" class="sm:col-span-2 hidden">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Texte personnalisé (Article 2)</label>
+                            <textarea id="renCustomNote" rows="2" placeholder="Précisez les modalités de renouvellement..." oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloc B : Rémunération / Augmentation de salaire -->
+                <div id="blockSalaryChange" class="hidden space-y-3 bg-emerald-50/50 p-3.5 rounded-lg border border-emerald-200">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">N° d'article selon le contrat</label>
+                            <input type="text" id="salArticleNum" value="6" placeholder="Ex: 6" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Rémunération mensuelle brute (€)</label>
+                            <input type="number" step="0.01" id="salMonthlyGross" placeholder="Ex: 2450.00" oninput="syncAnnualFromMonthly()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Heures hebdomadaires (optionnel)</label>
+                            <input type="number" step="0.01" id="salWeeklyHours" placeholder="Ex: 35" oninput="syncMonthlyHoursFromWeekly()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Heures mensuelles travaillées</label>
+                            <input type="number" step="0.01" id="salMonthlyHours" value="151.67" placeholder="Ex: 151.67" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-semibold text-slate-700">Montant annuel brut (€) — calculé auto (×12)</label>
+                                <label class="inline-flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
+                                    <input type="checkbox" id="manualAnnualOverride" onchange="renderPreview()" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                                    <span>Saisie manuelle</span>
+                                </label>
+                            </div>
+                            <input type="number" step="0.01" id="salAnnualGross" placeholder="Calculé automatiquement" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloc C : Transformation CDD en CDI -->
+                <div id="blockCddToCdi" class="hidden space-y-3 bg-amber-50/50 p-3.5 rounded-lg border border-amber-200">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Date du CDD initial</label>
+                            <input type="date" id="cdiInitialCddDate" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Date d'expiration prévue du CDD</label>
+                            <input type="date" id="cdiExpiryDate" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Qualité / Poste occupé</label>
+                            <input type="text" id="cdiJobTitle" placeholder="Ex: Conducteur routier" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Coefficient</label>
+                            <input type="text" id="cdiCoefficient" placeholder="Ex: 150M" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Échelon</label>
+                            <input type="text" id="cdiEchelon" placeholder="Ex: Groupe 7" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Convention collective</label>
+                            <input type="text" id="cdiCollectiveAgreement" placeholder="Ex: Transports routiers" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Motif du recours au CDD initial</label>
+                            <input type="text" id="cdiInitialReason" placeholder="Ex: Accroissement temporaire d'activité" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Signature & Exemplaires -->
+            <div class="space-y-3 pb-6">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-2 border-b border-slate-100 pb-2">
+                    <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs">5</span>
+                    Lieu, Date et Exemplaires
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Fait à (Ville)</label>
+                        <input type="text" id="signCity" placeholder="Ex: Valence" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Date de signature</label>
+                        <input type="date" id="signDate" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nb d'exemplaires</label>
+                        <input type="text" id="signCopies" value="deux" placeholder="Ex: deux" oninput="renderPreview()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Panneau d'aperçu A4 en direct -->
+        <section id="previewSection" class="hidden lg:block flex-1 bg-slate-200/80 overflow-y-auto p-4 sm:p-8 a4-scroll-wrap">
+            <div id="pdfDocumentRoot" class="a4-sheet document-font">
+                <!-- Contenu généré dynamiquement selon le type d'avenant -->
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        /**
+         * Formate une date ISO (AAAA-MM-JJ) au format français JJ/MM/AAAA.
+         * Retourne le placeholder si vide.
+         */
+        function formatDateFr(isoDate, fallback) {
+            if (!isoDate) return fallback;
+            const parts = isoDate.split('-');
+            if (parts.length !== 3) return isoDate;
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        /**
+         * Formate un nombre avec séparateur décimal français (virgule).
+         */
+        function formatDecimalFr(value, decimals = 2) {
+            const num = parseFloat(value);
+            if (isNaN(num)) return null;
+            return num.toLocaleString('fr-FR', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        /**
+         * Échappe les caractères HTML pour éviter toute injection dans le rendu d'aperçu.
+         */
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        /**
+         * Affiche un message d'état non bloquant (sans alert/confirm).
+         */
+        function showStatusBanner(message, type = 'info') {
+            const banner = document.getElementById('statusBanner');
+            banner.classList.remove('hidden', 'bg-blue-50', 'text-blue-800', 'border-blue-200', 'bg-amber-50', 'text-amber-800', 'border-amber-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+            if (type === 'error') {
+                banner.classList.add('bg-amber-50', 'text-amber-800', 'border-amber-200');
+            } else if (type === 'success') {
+                banner.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+            } else {
+                banner.classList.add('bg-blue-50', 'text-blue-800', 'border-blue-200');
+            }
+            banner.textContent = message;
+        }
+
+        function hideStatusBanner() {
+            document.getElementById('statusBanner').classList.add('hidden');
+        }
+
+        /**
+         * Synchronise les heures mensuelles depuis les heures hebdomadaires (35h -> 151,67h).
+         */
+        function syncMonthlyHoursFromWeekly() {
+            const weekly = parseFloat(document.getElementById('salWeeklyHours').value);
+            if (!isNaN(weekly) && weekly > 0) {
+                const monthly = (weekly * 52 / 12).toFixed(2);
+                document.getElementById('salMonthlyHours').value = monthly;
+            }
+            renderPreview();
+        }
+
+        /**
+         * Calcule automatiquement la rémunération annuelle brute (mensuel * 12) sauf si saisie manuelle active.
+         */
+        function syncAnnualFromMonthly() {
+            const manualOverride = document.getElementById('manualAnnualOverride').checked;
+            const monthlyVal = parseFloat(document.getElementById('salMonthlyGross').value);
+            if (!manualOverride) {
+                if (!isNaN(monthlyVal) && monthlyVal >= 0) {
+                    document.getElementById('salAnnualGross').value = (monthlyVal * 12).toFixed(2);
+                } else {
+                    document.getElementById('salAnnualGross').value = '';
+                }
+            }
+            renderPreview();
+        }
+
+        /**
+         * Adapte les champs visibles du formulaire selon le type d'avenant sélectionné.
+         */
+        function handleAmendmentTypeChange() {
+            const type = document.querySelector('input[name="amendmentType"]:checked').value;
+
+            const blockRenewal = document.getElementById('blockRenewalCdd');
+            const blockSalary = document.getElementById('blockSalaryChange');
+            const blockCdi = document.getElementById('blockCddToCdi');
+
+            const empCapitalField = document.getElementById('empCapitalField');
+            const empNafField = document.getElementById('empNafField');
+            const empPostalCityField = document.getElementById('empPostalCityField');
+            const empRcsCityField = document.getElementById('empRcsCityField');
+            const empRcsNumField = document.getElementById('empRcsNumField');
+
+            const salPostalCityField = document.getElementById('salPostalCityField');
+            const salNationalityField = document.getElementById('salNationalityField');
+            const salSsnField = document.getElementById('salSsnField');
+
+            blockRenewal.classList.add('hidden');
+            blockSalary.classList.add('hidden');
+            blockCdi.classList.add('hidden');
+
+            if (type === 'RENEWAL_CDD') {
+                blockRenewal.classList.remove('hidden');
+                empCapitalField.classList.add('hidden');
+                empNafField.classList.add('hidden');
+                empPostalCityField.classList.remove('hidden');
+                empRcsCityField.classList.remove('hidden');
+                empRcsNumField.classList.remove('hidden');
+
+                salPostalCityField.classList.remove('hidden');
+                salNationalityField.classList.add('hidden');
+                salSsnField.classList.add('hidden');
+            } else if (type === 'SALARY_CHANGE') {
+                blockSalary.classList.remove('hidden');
+                empCapitalField.classList.remove('hidden');
+                empNafField.classList.remove('hidden');
+                empPostalCityField.classList.add('hidden');
+                empRcsCityField.classList.add('hidden');
+                empRcsNumField.classList.add('hidden');
+
+                salPostalCityField.classList.add('hidden');
+                salNationalityField.classList.remove('hidden');
+                salSsnField.classList.remove('hidden');
+            } else if (type === 'CDD_TO_CDI') {
+                blockCdi.classList.remove('hidden');
+                empCapitalField.classList.remove('hidden');
+                empNafField.classList.remove('hidden');
+                empPostalCityField.classList.add('hidden');
+                empRcsCityField.classList.add('hidden');
+                empRcsNumField.classList.add('hidden');
+
+                salPostalCityField.classList.add('hidden');
+                salNationalityField.classList.remove('hidden');
+                salSsnField.classList.remove('hidden');
+            }
+
+            toggleRenewalCustomNote();
+            renderPreview();
+        }
+
+        function toggleRenewalCustomNote() {
+            const rank = document.getElementById('renRankNote').value;
+            const customWrap = document.getElementById('renCustomNoteWrap');
+            if (rank === 'custom') {
+                customWrap.classList.remove('hidden');
+            } else {
+                customWrap.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Bascule entre Formulaire et Aperçu PDF sur mobile.
+         */
+        function switchMobileTab(tab) {
+            const formSec = document.getElementById('formSection');
+            const prevSec = document.getElementById('previewSection');
+            const btnForm = document.getElementById('btnTabForm');
+            const btnPrev = document.getElementById('btnTabPreview');
+
+            if (tab === 'form') {
+                formSec.classList.remove('hidden');
+                prevSec.classList.add('hidden');
+                prevSec.classList.remove('block');
+                btnForm.className = 'px-3 py-1.5 rounded-md bg-indigo-600 text-white transition';
+                btnPrev.className = 'px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition';
+            } else {
+                formSec.classList.add('hidden');
+                prevSec.classList.remove('hidden');
+                prevSec.classList.add('block');
+                btnPrev.className = 'px-3 py-1.5 rounded-md bg-indigo-600 text-white transition';
+                btnForm.className = 'px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition';
+                renderPreview();
+            }
+        }
+
+        /**
+         * Récupère une valeur saisie nettoyée.
+         */
+        function getVal(id) {
+            const el = document.getElementById(id);
+            return el ? el.value.trim() : '';
+        }
+
+        /**
+         * Génère le HTML complet de l'avenant A4 selon le modèle sélectionné.
+         */
+        function buildAmendmentHtml() {
+            const type = document.querySelector('input[name="amendmentType"]:checked').value;
+
+            const companyName = escapeHtml(getVal('empCompanyName') || '[Nom de la société]');
+            const legalForm = escapeHtml(getVal('empLegalForm') || '[Forme]');
+            const capital = escapeHtml(getVal('empCapital') || '[Capital]');
+            const naf = escapeHtml(getVal('empNaf') || '[code NAF]');
+            const empAddress = escapeHtml(getVal('empAddress') || '[Adresse du siège social]');
+            const empPostalCity = escapeHtml(getVal('empPostalCity') || '[Code postal et la ville]');
+            const rcsCity = escapeHtml(getVal('empRcsCity') || '[Ville d\'enregistrement RCS]');
+            const rcsNumber = escapeHtml(getVal('empRcsNumber') || '[Numéro d\'enregistrement RCS]');
+            const empRepName = escapeHtml(getVal('empRepName') || '[Représentant de la société]');
+            const empRepRole = escapeHtml(getVal('empRepRole') || '[Qualité du représentant]');
+
+            const civility = escapeHtml(getVal('salCivility') || 'Monsieur');
+            const firstName = escapeHtml(getVal('salFirstName') || '[Prénom]');
+            const lastName = escapeHtml(getVal('salLastName') || '[Nom]');
+            const birthDate = escapeHtml(formatDateFr(getVal('salBirthDate'), '[Date de naissance]'));
+            const birthPlace = escapeHtml(getVal('salBirthPlace') || '[Lieu de naissance]');
+            const salAddress = escapeHtml(getVal('salAddress') || '[Adresse]');
+            const salPostalCity = escapeHtml(getVal('salPostalCity') || '[Code postal et Ville]');
+            const nationality = escapeHtml(getVal('salNationality') || '[Nationalité]');
+            const ssn = escapeHtml(getVal('salSsn') || '[Numéro de sécurité sociale]');
+
+            const signCity = escapeHtml(getVal('signCity') || '[Ville]');
+            const signDate = escapeHtml(formatDateFr(getVal('signDate'), '[Date]'));
+            const copies = escapeHtml(getVal('signCopies') || 'deux');
+
+            // 1. MODÈLE RENOUVELLEMENT CDD
+            if (type === 'RENEWAL_CDD') {
+                const renDuration = escapeHtml(getVal('renDuration') || '[Durée du renouvellement]');
+                const renStart = escapeHtml(formatDateFr(getVal('renStartDate'), '[Début de renouvellement]'));
+                const renEnd = escapeHtml(formatDateFr(getVal('renEndDate'), '[Date de fin de renouvellement]'));
+
+                const rankSelect = document.getElementById('renRankNote').value;
+                let rankText = '';
+                if (rankSelect === 'first_of_two') {
+                    rankText = 'Ce renouvellement étant le premier renouvellement du contrat à durée déterminée, un second et dernier renouvellement pourra être proposé au salarié, conformément aux dispositions de l\'Article L. 1243-13 du Code du Travail.';
+                } else if (rankSelect === 'second_final') {
+                    rankText = 'Ce renouvellement constitue le second et dernier renouvellement autorisé conformément aux dispositions de l\'Article L. 1243-13 du Code du Travail.';
+                } else {
+                    rankText = escapeHtml(getVal('renCustomNote') || 'Ce renouvellement est effectué conformément aux dispositions légales applicables au contrat à durée déterminée.');
+                }
+
+                return `
+                    <div class="mb-6">
+                        <p class="text-sm font-bold text-slate-800 mb-3">Avenant de renouvellement d'un CDD</p>
+                        <div class="text-center border-b-2 border-slate-900 pb-3">
+                            <h1 class="text-base sm:text-lg font-bold uppercase tracking-wide text-slate-900">
+                                AVENANT AU CONTRAT DE TRAVAIL A DURÉE DÉTERMINÉE
+                            </h1>
+                            <p class="text-xs font-semibold text-slate-700 mt-1">
+                                Renouvellement du contrat de travail à durée déterminée
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 text-justify">
+                        <p class="font-bold text-slate-900">Entre les soussignés :</p>
+
+                        <p>
+                            <strong>${companyName}</strong>, dont le siège social est situé <strong>${empAddress}</strong> - <strong>${empPostalCity}</strong>, immatriculée au registre du commerce et des sociétés de <strong>${rcsCity}</strong>, sous le numéro <strong>${rcsNumber}</strong> et représentée par <strong>${empRepName}</strong> en sa qualité de <strong>${empRepRole}</strong> ;
+                        </p>
+                        <p class="font-bold text-slate-900">Ci-après dénommé « l'employeur », d'une part ;</p>
+
+                        <p class="font-bold uppercase text-slate-900">ET</p>
+
+                        <p>
+                            <strong>${civility} ${firstName} ${lastName}</strong>, né(e) le <strong>${birthDate}</strong> à <strong>${birthPlace}</strong>, demeurant <strong>${salAddress}</strong>, <strong>${salPostalCity}</strong>.
+                        </p>
+                        <p class="font-bold text-slate-900">Ci-après dénommé « le salarié », d'autre part ;</p>
+
+                        <p class="font-bold uppercase text-xs tracking-wider pt-2 text-slate-900">IL A ÉTÉ CONVENU CE QUI SUIT :</p>
+
+                        <div class="avoid-break pt-1">
+                            <h2 class="font-bold text-sm text-slate-900 mb-1.5">Article 1 - Objet et durée du contrat</h2>
+                            <p class="mb-2">
+                                L'objet de cet avenant est de procéder au renouvellement du contrat de travail à durée déterminée signé entre l'employeur et le salarié.
+                            </p>
+                            <p class="mb-2">
+                                Les parties décident de renouveler le contrat qui les liait et de fixer par les présentes la durée et les modalités du contrat de travail à durée déterminée.
+                            </p>
+                            <p>
+                                Le motif du recours au contrat à durée déterminée persistant au-delà de l'échéance prévue, le contrat est renouvelé pour une durée de <strong>${renDuration}</strong>. Le renouvellement du contrat de travail débutera donc le <strong>${renStart}</strong> et s'achèvera le <strong>${renEnd}</strong>.
+                            </p>
+                        </div>
+
+                        <div class="avoid-break pt-2">
+                            <h2 class="font-bold text-sm text-slate-900 mb-1.5">Article 2 - Conditions du renouvellement</h2>
+                            <p class="mb-2">
+                                En dehors des changements précisés dans le présent avenant, les autres dispositions applicables au contrat de travail initial restent inchangées.
+                            </p>
+                            <p>
+                                ${rankText}
+                            </p>
+                        </div>
+
+                        <div class="avoid-break pt-6">
+                            <p class="font-semibold mb-6">
+                                Fait à <strong>${signCity}</strong>, le <strong>${signDate}</strong> en <strong>${copies}</strong> exemplaires, dont un remis à chaque partie.
+                            </p>
+
+                            <div class="grid grid-cols-2 gap-8 pt-2">
+                                <div class="space-y-12">
+                                    <div>
+                                        <p class="font-bold text-slate-900">L'employeur :</p>
+                                        <p class="text-xs text-slate-700 mt-0.5">Représenté par <strong>${empRepName}</strong></p>
+                                        <p class="text-[11px] text-slate-600 mt-1">Signature précédée de la mention « lu et approuvé »</p>
+                                    </div>
+                                    <div class="border-b border-dotted border-slate-400 w-4/5"></div>
+                                </div>
+
+                                <div class="space-y-12">
+                                    <div>
+                                        <p class="font-bold text-slate-900">Le salarié :</p>
+                                        <p class="text-xs font-semibold text-slate-800 mt-0.5">${firstName} ${lastName}</p>
+                                        <p class="text-[11px] text-slate-600 mt-1">Signature précédée de la mention « lu et approuvé »</p>
+                                    </div>
+                                    <div class="border-b border-dotted border-slate-400 w-4/5"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 2. MODÈLE RÉMUNÉRATION / AUGMENTATION DE SALAIRE
+            if (type === 'SALARY_CHANGE') {
+                const articleNum = escapeHtml(getVal('salArticleNum') || '6');
+                const monthlyRaw = parseFloat(getVal('salMonthlyGross'));
+                const monthlyHoursRaw = parseFloat(getVal('salMonthlyHours'));
+
+                let annualRaw = parseFloat(getVal('salAnnualGross'));
+                if (!document.getElementById('manualAnnualOverride').checked && !isNaN(monthlyRaw)) {
+                    annualRaw = monthlyRaw * 12;
+                }
+
+                const monthlyFormatted = !isNaN(monthlyRaw)
+                    ? `${escapeHtml(formatDecimalFr(monthlyRaw, 2))} €`
+                    : '[Montant] €';
+
+                const hoursFormatted = !isNaN(monthlyHoursRaw)
+                    ? escapeHtml(formatDecimalFr(monthlyHoursRaw, 2))
+                    : '[Heures mensuelles travaillées]';
+
+                const annualFormatted = !isNaN(annualRaw)
+                    ? `${escapeHtml(formatDecimalFr(annualRaw, 2))} €`
+                    : '[Montant] €';
+
+                return `
+                    <div class="text-center mb-8 pb-3 border-b border-slate-300">
+                        <h1 class="text-lg font-bold text-slate-900">
+                            Avenant au contrat de travail – Rémunération
+                        </h1>
+                    </div>
+
+                    <div class="space-y-4 text-justify">
+                        <p class="font-bold text-slate-900">Entre les soussignés :</p>
+
+                        <div class="pl-3">
+                            <p>
+                                &bull;&nbsp;&nbsp;<strong>La Société</strong> <em>${companyName}</em>, <em>(${legalForm})</em>, au capital de <em>(${capital})</em> €, code NAF : <em>(${naf})</em>, dont le siège est situé <em>(${empAddress})</em>, représentée par <em>(${empRepName})</em>, en sa qualité de <em>(${empRepRole})</em>.
+                            </p>
+                            <p class="text-right text-xs font-semibold text-slate-700 mt-2">D'une part</p>
+                        </div>
+
+                        <p class="font-bold text-slate-900">Et</p>
+
+                        <div class="pl-3">
+                            <p>
+                                &bull;&nbsp;&nbsp;<strong>${civility}</strong> <em>(${lastName}) (${firstName})</em>, demeurant <em>(${salAddress})</em>, né(e) le <em>(${birthDate})</em>, à <em>(${birthPlace})</em>, de nationalité <em>(${nationality})</em>, immatriculé à la sécurité sociale sous le n° <em>(${ssn})</em>.
+                            </p>
+                            <p class="text-right text-xs font-semibold text-slate-700 mt-2">D'autre part.</p>
+                        </div>
+
+                        <p class="font-semibold pt-2 text-slate-900">Il a été convenu ce qui suit :</p>
+
+                        <div class="avoid-break pt-3">
+                            <h2 class="font-bold text-sm uppercase text-slate-900 mb-3">
+                                ARTICLE <em>(${articleNum})</em> - RÉMUNÉRATION
+                            </h2>
+                            <p>
+                                En contrepartie de son travail, ${civility} <em>(${firstName}) (${lastName})</em>, bénéficiera d'une rémunération mensuelle brute de <strong>${monthlyFormatted}</strong> pour <strong>${hoursFormatted}</strong> heures mensuelles (soit <strong>${annualFormatted}</strong> bruts par an).
+                            </p>
+                        </div>
+
+                        <div class="avoid-break pt-3">
+                            <p class="font-medium text-slate-900">
+                                Les autres clauses du contrat restent en vigueur.
+                            </p>
+                        </div>
+
+                        <div class="avoid-break pt-8">
+                            <p class="font-semibold text-slate-900">Fait à <em>(${signCity})</em>,</p>
+                            <p class="font-semibold text-slate-900 mt-1">Le <em>(${signDate})</em> en <strong>${copies}</strong> exemplaires originaux</p>
+
+                            <div class="grid grid-cols-2 gap-8 mt-10">
+                                <div class="text-center space-y-12">
+                                    <div>
+                                        <p class="font-bold text-slate-900">La Société</p>
+                                        <p class="text-xs italic text-slate-500">(Signature)</p>
+                                    </div>
+                                    <div class="border-b border-dotted border-slate-400 w-3/4 mx-auto"></div>
+                                </div>
+
+                                <div class="text-center space-y-12">
+                                    <div>
+                                        <p class="font-bold text-slate-900">Le salarié</p>
+                                        <p class="text-xs italic text-slate-500">(Signature)</p>
+                                    </div>
+                                    <div class="border-b border-dotted border-slate-400 w-3/4 mx-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 3. MODÈLE TRANSFORMATION CDD EN CDI
+            const initialCddDate = escapeHtml(formatDateFr(getVal('cdiInitialCddDate'), '[Préciser la date]'));
+            const expiryDate = escapeHtml(formatDateFr(getVal('cdiExpiryDate'), '[date]'));
+            const cdiJobTitle = escapeHtml(getVal('cdiJobTitle') || '[qualité]');
+            const coefficient = escapeHtml(getVal('cdiCoefficient') || '[coefficient]');
+            const echelon = escapeHtml(getVal('cdiEchelon') || '[échelon]');
+            const collectiveAgreement = escapeHtml(getVal('cdiCollectiveAgreement') || '[Convention collective]');
+            const initialReason = escapeHtml(getVal('cdiInitialReason') || '[rappeler le motif du recours au CDD]');
+
+            return `
+                <div class="text-center mb-8 pb-3 border-b border-slate-300">
+                    <h1 class="text-lg font-bold text-slate-900">
+                        Avenant au contrat de travail : CDD en CDI
+                    </h1>
+                </div>
+
+                <div class="space-y-4 text-justify">
+                    <p class="font-bold text-slate-900">Entre les soussignés :</p>
+
+                    <div class="pl-3">
+                        <p>
+                            &bull;&nbsp;&nbsp;<strong>La Société</strong> <em>(${companyName})</em>, <em>(${legalForm})</em>, au capital de <em>(${capital})</em> €, code NAF : <em>(${naf})</em>, dont le siège est situé <em>(${empAddress})</em>, représentée par <em>(${empRepName})</em>, en sa qualité de <em>(${empRepRole})</em>.
+                        </p>
+                        <p class="text-right text-xs font-semibold text-slate-700 mt-2">D'une part</p>
+                    </div>
+
+                    <p class="font-bold text-slate-900">Et</p>
+
+                    <div class="pl-3">
+                        <p>
+                            &bull;&nbsp;&nbsp;<strong>${civility}</strong> <em>(${lastName}) (${firstName})</em>, demeurant <em>(${salAddress})</em>, né(e) le <em>(${birthDate})</em>, à <em>(${birthPlace})</em>, de nationalité <em>(${nationality})</em>, immatriculé à la sécurité sociale sous le n° <em>(${ssn})</em>.
+                        </p>
+                        <p class="text-right text-xs font-semibold text-slate-700 mt-2">D'autre part</p>
+                    </div>
+
+                    <p class="font-semibold pt-2 text-slate-900">Il a été convenu ce qui suit :</p>
+
+                    <div class="avoid-break space-y-3 pt-1">
+                        <p>
+                            <strong>Par contrat à durée déterminée du</strong> <em>(${initialCddDate})</em> <strong>${civility}</strong> <em>(${lastName}) (${firstName})</em> <strong>a été recruté(e) en qualité de</strong> <em>(${cdiJobTitle})</em> <strong>coefficient</strong> <em>(${coefficient})</em> <strong>échelon</strong> <em>(${echelon})</em> <strong>de la Convention collective</strong> <em>(${collectiveAgreement})</em> <strong>applicable pour</strong> <em>(${initialReason})</em>.
+                        </p>
+
+                        <p>
+                            <strong>Le contrat devant expirer au</strong> <em>(${expiryDate})</em>, <strong>les parties ont convenu de poursuivre leur relation contractuelle en contrat à durée indéterminée.</strong>
+                        </p>
+
+                        <p>
+                            <strong>En conséquence, ${civility}</strong> <em>(${lastName}) (${firstName})</em> <strong>restera salarié(e) de l'entreprise aux conditions salariales et aux horaires convenus, avec une reprise d'ancienneté et de l'ensemble des avantages acquis au 1<sup>er</sup> jour d'entrée dans l'entreprise.</strong>
+                        </p>
+
+                        <p class="pt-1">
+                            <strong>Les autres clauses du contrat demeurent inchangées.</strong>
+                        </p>
+                    </div>
+
+                    <div class="avoid-break pt-8">
+                        <p class="font-semibold text-slate-900">
+                            Fait à <em>(${signCity})</em> le <em>(${signDate})</em> en <em>(${copies})</em> exemplaires originaux
+                        </p>
+
+                        <div class="grid grid-cols-2 gap-8 mt-10">
+                            <div class="space-y-12">
+                                <p class="font-bold text-slate-900 pl-4">Le salarié</p>
+                                <div class="border-b border-dotted border-slate-400 w-3/4"></div>
+                            </div>
+
+                            <div class="space-y-12">
+                                <p class="font-bold text-slate-900 pl-4">L'entreprise</p>
+                                <div class="border-b border-dotted border-slate-400 w-3/4"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Met à jour l'aperçu A4 en direct.
+         */
+        function renderPreview() {
+            const container = document.getElementById('pdfDocumentRoot');
+            container.innerHTML = buildAmendmentHtml();
+        }
+
+        /**
+         * Remplit des données d'exemple réalistes pour l'avenant actif.
+         */
+        function fillSampleData() {
+            const type = document.querySelector('input[name="amendmentType"]:checked').value;
+            const today = new Date().toISOString().split('T')[0];
+
+            document.getElementById('empCompanyName').value = 'TRANSPORTS RHÔNE DRÔME';
+            document.getElementById('empLegalForm').value = 'SAS';
+            document.getElementById('empCapital').value = '75 000';
+            document.getElementById('empNaf').value = '49.41B';
+            document.getElementById('empAddress').value = '18 Avenue des Transporteurs';
+            document.getElementById('empPostalCity').value = '26000 Valence';
+            document.getElementById('empRcsCity').value = 'Romans-sur-Isère';
+            document.getElementById('empRcsNumber').value = '824 519 302';
+            document.getElementById('empRepName').value = 'DURAND Paul';
+            document.getElementById('empRepRole').value = 'Président';
+
+            document.getElementById('salCivility').value = 'Monsieur';
+            document.getElementById('salFirstName').value = 'Lucas';
+            document.getElementById('salLastName').value = 'MARTIN';
+            document.getElementById('salBirthDate').value = '1993-06-14';
+            document.getElementById('salBirthPlace').value = 'Valence (26)';
+            document.getElementById('salAddress').value = '12 Impasse des Tilleuls';
+            document.getElementById('salPostalCity').value = '26500 Bourg-lès-Valence';
+            document.getElementById('salNationality').value = 'Française';
+            document.getElementById('salSsn').value = '1 93 06 26 362 048 19';
+
+            document.getElementById('signCity').value = 'Valence';
+            document.getElementById('signDate').value = today;
+            document.getElementById('signCopies').value = 'deux';
+
+            if (type === 'RENEWAL_CDD') {
+                document.getElementById('renDuration').value = '6 mois';
+                document.getElementById('renStartDate').value = '2026-12-01';
+                document.getElementById('renEndDate').value = '2027-05-31';
+                document.getElementById('renRankNote').value = 'first_of_two';
+            } else if (type === 'SALARY_CHANGE') {
+                document.getElementById('salArticleNum').value = '6';
+                document.getElementById('salWeeklyHours').value = '35';
+                document.getElementById('salMonthlyHours').value = '151.67';
+                document.getElementById('manualAnnualOverride').checked = false;
+                document.getElementById('salMonthlyGross').value = '2450.00';
+                syncAnnualFromMonthly();
+            } else if (type === 'CDD_TO_CDI') {
+                document.getElementById('cdiInitialCddDate').value = '2026-03-01';
+                document.getElementById('cdiExpiryDate').value = '2026-11-30';
+                document.getElementById('cdiJobTitle').value = 'Conducteur routier poids lourds';
+                document.getElementById('cdiCoefficient').value = '150M';
+                document.getElementById('cdiEchelon').value = 'Groupe 7';
+                document.getElementById('cdiCollectiveAgreement').value = 'Transports routiers et activités auxiliaires du transport';
+                document.getElementById('cdiInitialReason').value = 'accroissement temporaire d\'activité';
+            }
+
+            toggleRenewalCustomNote();
+            renderPreview();
+            showStatusBanner('Exemple chargé. Vous pouvez modifier librement chaque champ avant d\'exporter en PDF.', 'success');
+        }
+
+        /**
+         * Réinitialise tous les champs du formulaire.
+         */
+        function resetAllFields() {
+            const inputs = document.querySelectorAll('#formSection input[type="text"], #formSection input[type="date"], #formSection input[type="number"], #formSection textarea');
+            inputs.forEach((el) => {
+                el.value = '';
+            });
+
+            document.getElementById('salCivility').value = 'Monsieur';
+            document.getElementById('salArticleNum').value = '6';
+            document.getElementById('salMonthlyHours').value = '151.67';
+            document.getElementById('manualAnnualOverride').checked = false;
+            document.getElementById('renRankNote').value = 'first_of_two';
+            document.getElementById('signCopies').value = 'deux';
+
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('signDate').value = today;
+
+            toggleRenewalCustomNote();
+            renderPreview();
+            hideStatusBanner();
+        }
+
+        /**
+         * Exporte l'aperçu A4 en fichier PDF via html2pdf.js.
+         */
+        function exportAmendmentPDF() {
+            renderPreview();
+            const element = document.getElementById('pdfDocumentRoot');
+            const btn = document.getElementById('btnExportPdf');
+            const originalHtml = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span>Création PDF...</span>';
+            hideStatusBanner();
+
+            const type = document.querySelector('input[name="amendmentType"]:checked').value;
+            const prefixMap = {
+                RENEWAL_CDD: 'Avenant_Renouvellement_CDD',
+                SALARY_CHANGE: 'Avenant_Remuneration',
+                CDD_TO_CDI: 'Avenant_CDD_en_CDI'
+            };
+            const rawLastName = getVal('salLastName') || 'Salarie';
+            const cleanLastName = rawLastName.replace(/[^a-zA-Z0-9_-]/g, '_');
+            const filename = `${prefixMap[type] || 'Avenant'}_${cleanLastName}.pdf`;
+
+            const options = {
+                margin: 0,
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    letterRendering: true,
+                    scrollY: 0
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                },
+                pagebreak: {
+                    mode: ['css', 'legacy'],
+                    avoid: '.avoid-break'
+                }
+            };
+
+            try {
+                html2pdf()
+                    .set(options)
+                    .from(element)
+                    .save()
+                    .then(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        showStatusBanner(`PDF généré : ${filename}`, 'success');
+                    })
+                    .catch((err) => {
+                        console.error('Erreur export PDF :', err);
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        showStatusBanner('Impossible de générer le PDF pour le moment. Vérifiez votre connexion ou réessayez.', 'error');
+                    });
+            } catch (err) {
+                console.error('Erreur inattendue html2pdf :', err);
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                showStatusBanner('Une erreur est survenue lors de la génération du document PDF.', 'error');
+            }
+        }
+
+        // Initialisation au chargement de la page
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('renRankNote').addEventListener('change', toggleRenewalCustomNote);
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('signDate').value = today;
+            handleAmendmentTypeChange();
+        });
+    </script>
+</body>
+</html>
